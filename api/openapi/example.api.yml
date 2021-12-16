@@ -1,0 +1,1032 @@
+openapi: '3.0.2'
+info:
+  title: ContentMan
+  version: '1.0'
+  
+servers:
+  - url: https://loclahost:8080/v1
+
+components:
+  responses:
+      SuccessNoContent:
+        description: Действие завершено, но контент не возвращается
+      NotFound:
+        description: Данный URL не существует
+  securitySchemes:
+    HTTPBasic:
+      type: http
+      scheme: basic
+    HTTPBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    APIKey:
+      type: apiKey
+      name: api_key
+      in: query
+  parameters:
+    accountID:
+      name: accountID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+    offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+    fields:
+      name: fields
+      description: Поля схемы для включения, иначе вce
+      example: ["id","email"]
+      in: query
+      schema:
+        type: array
+        items:
+          type: string
+          description: Поля объекта
+    onlyActual:
+     name: onlyActual
+     in: query
+     schema:
+      type: boolean
+    serviceID:
+     name: serviceID
+     required: true
+     in: path
+     schema:
+      type: string
+      format: uuid
+    userID:
+     name: userID
+     required: true
+     in: path
+     schema:
+      type: string
+      format: uuid
+    groupID:
+      name: groupID
+      in: path
+      required: true
+      schema:
+        type: string
+        maxLength: 10
+    groupIDInQueryNotRequired:
+      name: groupID
+      in: query
+      required: false
+      schema:
+        type: string
+        maxLength: 10
+    categoryID:
+      name: categoryID
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    categoryIDInQuery:
+      name: categoryID
+      in: query
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    categoryIDInQueryNotRequired:
+      name: categoryID
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+    contentID:
+      name: contentID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    groups:
+      name: groups
+      in: query
+      required: true
+      description: Using first char "+" for add user to group, "-" for drop user from group. If first char != "+" or "-" then user add to group. If group from groupList undefined, return message info.
+      schema:
+        type: array
+        items:
+          $ref: "#/components/parameters/groupID"
+      example:
+        type: array
+        items: 
+          - admin
+          - +editor
+          - -viewer
+    apiKey:
+     name: key
+     description: Using user:secret
+     required: true
+     in: query
+     schema:
+      type: string
+      format: uuid
+    apiKeyNotRequired:
+     name: key
+     description: Using user:secret
+     required: false
+     in: query
+     schema:
+      type: string
+      format: uuid
+    parentID:
+      name: parentID
+      required: false
+      in: query
+      schema:
+        type: integer
+        minimum: 1    
+    permission:
+      name: permission
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 666
+    index:
+      name: index
+      required: false
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+    description:
+      name: description
+      required: false
+      in: query
+      schema:
+        type: string
+        maxLength: 100
+    title:
+      name: title
+      required: false
+      in: query
+      schema:
+        type: string
+        maxLength: 100
+    imageURL:
+      name: imageURL
+      required: false
+      in: query
+      schema:
+        type: string
+    defaultPermission:
+      name: defaultPermission
+      required: false
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 666
+  schemas:
+    Service:
+      description: Название сервиса к которому относится вложенные контент
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          description: service id
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        name:
+          type: string
+        description:
+          type: string
+    User:
+      description: Пользователи управляющие контентом
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+        secret:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+    Category:
+      description: Категории контента
+      type: object
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          readOnly: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+        parentID:
+          type: integer
+          minimum: 1
+        index:
+          type: integer
+          minimum: 0
+          description: порядковый номер в списке категорий
+        name:
+          type: string
+        description:
+          type: string
+        imageURL:
+          type: string
+        defaultPermission:
+          type: integer
+          minimum: 0
+          maximum: 666
+    NewContent:
+      type: object
+      properties:
+        title:
+          type: string
+        index:
+          type: integer
+        preview:
+          type: string
+        full:
+          type: string
+        imageURL:
+          type: string
+        permission:
+          type: integer
+          minimum: 0
+          maximum: 666
+        contentTypeID:
+          type: integer
+        groupID:
+          type: string
+    Content:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+        title:
+          type: string
+        index:
+          type: integer
+        preview:
+          type: string
+        full:
+          type: string
+        imageURL:
+          type: string
+        contentType:
+          type: string
+          example: text/plain
+        permission:
+          type: integer
+          minimum: 0
+          maximum: 666
+paths:
+  /registrations:
+    post:
+      summary: Registration New Account
+      operationId: PostRegistration
+      tags:
+        - Registrations
+      requestBody:
+        description: Пользователь в ContentMan        
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: '^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$'
+                  example: support@contentman.app
+                  description: Уникальный email пользователя
+                  minLength: 5
+                password:
+                  type: string
+                  description: Пароль для пользователя
+                  example: '*tm92WJtew7yipeD#Bc3eUJfM435ZIy!5c&'
+                  minLength: 8
+                  writeOnly: true
+                  format: password
+      responses:
+        204:
+          $ref: '#/components/responses/SuccessNoContent'
+          description: OK No Content
+  /confirm/{secretToken}:
+    get:
+      summary: Confirmation of email registration
+      operationId: GetConfirm
+      tags:
+        - Registrations
+      parameters:
+        - name: secretToken
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 40
+      responses:        
+        204:
+          $ref: '#/components/responses/SuccessNoContent'
+        404:
+          $ref: '#/components/responses/NotFound'
+  /recovery-password:
+    post:
+      summary: initial recovery password
+      operationId: PostRecoveryPasswordInit
+      tags:
+        - "Registrations"
+      requestBody:
+        description: "email пользователя, для отправки сообщения со ссылкой на восстановление пароля"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:        
+        200:
+          description: "recovery token"
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uuid
+  /recovery-password/{recoveryToken}:
+    post:
+      summary: completion recovery password
+      operationId: PostRecoveryPasswordComplete
+      tags:
+        - "Registrations"
+      parameters:
+        - name: recoveryToken
+          required: true
+          in: path
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: "новый пароль пользователя"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                  example: P@ssw0rd
+      responses:
+        204:
+          $ref: '#/components/responses/SuccessNoContent'
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  /services:
+    get:
+      security:
+        - HTTPBearer: []
+      summary: Get list services
+      operationId: GetServicesList
+      tags:
+        - Services
+      parameters:
+        - $ref: '#components/parameters/limit'
+        - $ref: '#components/parameters/offset'
+        - $ref: '#components/parameters/fields'
+        # - $ref: '#components/parameters/onlyActual'
+      responses:
+        200:
+          description: Services List
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Service"
+    post:
+      security:
+        - HTTPBearer: []
+      summary: Add new service
+      operationId: PostServices
+      tags:
+        - Services
+      requestBody:
+        description: Создание сервиса
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        200:
+          description: Service created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+  /services/{serviceID}:
+    patch:
+      security:
+        - HTTPBearer: []
+      summary: Update service info
+      operationId: PatchServices
+      tags:
+        - Services
+      parameters:
+        - $ref: '#components/parameters/serviceID'
+      requestBody:
+        description: Обновляемые данные
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        204:
+          description: Service updated
+    delete:
+      security:
+        - HTTPBearer: []
+      summary: Drop service
+      operationId: DeleteServices
+      tags:
+        - Services
+      parameters:
+        - $ref: '#components/parameters/serviceID'
+      responses:
+        204:
+          description: service deleted
+  /services/{serviceID}/users:
+    get:
+      security:
+        - HTTPBearer: []
+      summary: Get list service users
+      operationId: GetServiceUsers
+      tags:
+        - Services
+        - Users
+      parameters:
+        - $ref: '#components/parameters/serviceID'
+        - $ref: '#components/parameters/limit'
+        - $ref: '#components/parameters/offset'
+        - $ref: '#components/parameters/fields'
+      responses:
+        200:
+          description: Users List
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      security:
+        - HTTPBearer: []
+      summary: Add new user
+      operationId: PostServiceUsers
+      tags:
+        - Users
+        - Services
+      parameters:
+        - $ref: '#components/parameters/serviceID'
+      requestBody:
+        description: Создание user
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                groups:
+                  type: array
+                  items:
+                    $ref: '#/components/parameters/groupID'
+                  example:
+                    - admin
+                    - editor
+                    - viewer
+      responses:
+        200:
+          description: User created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  secret:
+                    type: string
+                    format: uuid
+  /services/{serviceID}/users/{userID}:
+    put:
+      security:
+        - HTTPBearer: []
+      summary: Update user
+      operationId: PutServiceUser
+      tags:
+        - Users
+        - Services
+      parameters:
+        - $ref: '#components/parameters/serviceID'
+        - $ref: '#components/parameters/userID'
+      requestBody:
+        description: Update user
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                groups:
+                  type: array
+                  items:
+                    type: string
+                    maxLength: 10
+                  example:
+                    - admin
+                    - editor
+                    - viewer
+      responses:
+        204:
+          description: SuccessNoContent
+    patch:
+      security:
+        - HTTPBearer: []
+      summary: Update groups for user
+      operationId: PatchServiceUserGroup
+      tags:
+        - Users
+        - Services
+      parameters:
+        - $ref: '#components/parameters/serviceID'
+        - $ref: '#components/parameters/userID'
+        - $ref: '#components/parameters/groups'
+      responses:
+        204:
+          description: User secret updated
+    delete:
+      security:
+        - HTTPBearer: []
+      summary: Drop user
+      operationId: DeleteServiceUser
+      tags:
+        - Users
+        - Services
+      parameters:
+        - $ref: '#components/parameters/serviceID'
+        - $ref: '#components/parameters/userID'
+      responses:
+        204:
+          description: SuccessNoContent
+  /services/{serviceID}/users/{userID}/reset:
+    get:
+      security:
+        - HTTPBearer: []
+      summary: Update user secret
+      operationId: GetServiceUserReset
+      tags:
+        - Users
+        - Services
+      parameters:
+        - $ref: '#components/parameters/serviceID'
+        - $ref: '#components/parameters/userID'
+      responses:
+        200:
+          description: User secret updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  secret:
+                    type: string
+                    format: uuid
+  /services/{serviceID}/groups:
+    get:
+      security:
+        - HTTPBearer: []
+      summary: Get list service groups
+      operationId: GetServiceUsers
+      tags:
+        - Services
+        - Groups
+      parameters:
+        - $ref: '#components/parameters/serviceID'
+        - $ref: '#components/parameters/limit'
+        - $ref: '#components/parameters/offset'
+        - $ref: '#components/parameters/fields'
+      responses:
+        200:
+          description: Users List
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      security:
+        - HTTPBearer: []
+      summary: Add new group
+      operationId: PostServiceGroup
+      tags:
+        - Services
+        - Groups
+      parameters:
+        - $ref: '#components/parameters/serviceID'
+      requestBody:
+        description: Создание группы пользователей сервиса
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  maxLength: 10
+                description:
+                  type: string
+                  maxLength: 1000
+      responses:
+        204:
+          $ref: '#/components/responses/SuccessNoContent'
+  /services/{serviceID}/groups/{groupID}:
+    delete:
+      security:
+        - HTTPBearer: []
+      summary: Drop group
+      operationId: DeleteServiceGroup
+      tags:
+        - Services
+        - Groups
+      parameters:
+        - $ref: '#components/parameters/serviceID'
+        - $ref: '#components/parameters/groupID'
+      responses:
+        204:
+          $ref: '#/components/responses/SuccessNoContent'
+  /categories:
+    get:
+      security:
+        - HTTPAPIKey: []
+      summary: Get list categories
+      operationId: GetCategoriesList
+      tags:
+        - Categories
+      parameters:
+        - $ref: '#components/parameters/apiKey'
+        - $ref: '#components/parameters/fields'
+      responses:
+        200:
+          description: Categories List
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+    post:
+        security:
+          - HTTPAPIKey: []
+        summary: Create category
+        operationId: PostCategories
+        tags:
+          - Categories
+        parameters:
+          - $ref: '#components/parameters/apiKey'
+        requestBody:
+          description: New category
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  parentID:
+                    type: integer
+                    minimum: 1
+                  index:
+                    type: integer
+                    minimum: 0
+                  description:
+                    type: string
+                  imageURL:
+                    type: string
+                  defaultPermission:
+                    type: integer
+                    minimum: 0
+                    maximum: 666
+        responses:
+          200:
+            description: Categories List
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      minimum: 1
+  /categories/{categoryID}:
+    patch:
+      security:
+        - HTTPAPIKey: []
+      summary: Update category
+      operationId: PatchCategory
+      tags:
+        - Categories
+      parameters:
+        - $ref: '#components/parameters/categoryID'
+        - $ref: '#components/parameters/parentID'
+        - $ref: '#components/parameters/index'
+        - $ref: '#components/parameters/description'
+        - $ref: '#components/parameters/imageURL'
+        - $ref: '#components/parameters/defaultPermission'
+      responses:
+        204:
+          description: SuccessNoContent
+    delete:
+      security:
+        - HTTPAPIKey: []
+      summary: Drop category
+      operationId: DeleteCategory
+      tags:
+        - Categories
+      parameters:
+        - $ref: '#components/parameters/categoryID'
+      responses:
+        204:
+          description: SuccessNoContent
+  /contents:
+    get:
+      security:
+        - HTTPAPIKey: []
+      summary: Get category contents
+      operationId: GetCategoryContentsList
+      tags:
+        - Contents
+      parameters:
+        - $ref: '#components/parameters/limit'
+        - $ref: '#components/parameters/offset'
+        - $ref: '#components/parameters/fields'
+        - $ref: '#components/parameters/apiKeyNotRequired'
+        - $ref: '#components/parameters/categoryIDInQueryNotRequired'
+      responses:
+        200:
+          description: Contents List
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    title:
+                      type: string
+                    index:
+                      type: integer
+                    preview:
+                      type: string
+                    imageURL:
+                      type: string
+                    contentType:
+                      type: string
+                      example: text/plain
+    post:
+      security:
+        - HTTPAPIKey: []
+      summary: Create category contents
+      operationId: PostContent
+      tags:
+        - Contents
+      parameters:
+        - $ref: '#components/parameters/apiKey'
+        - $ref: '#components/parameters/categoryIDInQuery'
+      requestBody:
+        description: New content
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                index:
+                  type: integer
+                preview:
+                  type: string
+                full:
+                  type: string
+                imageURL:
+                  type: string
+                permission:
+                  type: integer
+                  minimum: 0
+                  maximum: 666
+                contentTypeID:
+                  type: integer
+                groupID:
+                  type: string
+      responses:
+        200:
+          description: Content id
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+  /contents/{contentID}:
+    put:
+      security:
+          - HTTPAPIKey: []
+      summary: Update category contents
+      operationId: PutCategoryContent
+      tags:
+        - Contents
+      parameters:
+        - $ref: '#components/parameters/apiKey'
+        - $ref: '#components/parameters/categoryIDInQuery'
+        - $ref: '#components/parameters/contentID'
+      requestBody:
+        description: New content
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                index:
+                  type: integer
+                preview:
+                  type: string
+                full:
+                  type: string
+                imageURL:
+                  type: string
+                permission:
+                  type: integer
+                  minimum: 0
+                  maximum: 666
+                contentTypeID:
+                  type: integer
+                groupID:
+                  type: string
+      responses:
+        204:
+          description: SuccessNoContent
+    patch:
+      security:
+          - HTTPAPIKey: []
+      summary: Update category contents one fields
+      operationId: PatchCategoryContent
+      tags:
+        - Contents
+      parameters:
+        - $ref: '#components/parameters/apiKey'
+        - $ref: '#components/parameters/contentID'
+        - $ref: '#components/parameters/title'
+        - $ref: '#components/parameters/index'
+        - $ref: '#components/parameters/permission'
+        - $ref: '#components/parameters/categoryIDInQueryNotRequired'
+        - $ref: '#components/parameters/groupIDInQueryNotRequired'
+      requestBody:
+        description: New content
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                index:
+                  type: integer
+                preview:
+                  type: string
+                full:
+                  type: string
+                imageURL:
+                  type: string
+                permission:
+                  type: integer
+                  minimum: 0
+                  maximum: 666
+                contentTypeID:
+                  type: integer
+                groupID:
+                  type: string
+      responses:
+        204:
+          description: SuccessNoContent
+    delete:
+      security:
+          - HTTPAPIKey: []
+      summary: Drop content
+      operationId: DeleteContent
+      tags:
+        - Contents
+      parameters:
+        - $ref: '#components/parameters/apiKey'
+        - $ref: '#components/parameters/contentID'
+      responses:
+        204:
+          description: SuccessNoContent
+  /health:
+    get:
+      summary: Check service health
+      responses:
+        200:
+          description: service OK
+  /version:
+    get:
+      summary: Get service version
+      responses:
+        200:
+          description: Service version
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+  /metrics:
+    get:
+      summary: Get service metrics
+      responses:
+        200:
+          description: OK
