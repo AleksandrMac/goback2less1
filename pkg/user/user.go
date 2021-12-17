@@ -17,6 +17,6 @@ func NewService(storage service.CRUDL) *service.Service {
 	return service.New(storage)
 }
 
-func NewStorage(db *pgxpool.Pool) *storage.Storage {
-	return storage.New(db)
+func NewStorage(db *pgxpool.Pool) *storage.StorageTx {
+	return storage.NewTx(db)
 }
